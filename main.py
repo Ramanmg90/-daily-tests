@@ -79,61 +79,112 @@ def parse_answer(a):
     return head, reason
 
 
+# ---------- تاریخ شمسی ----------
+MONTHS = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+WEEKDAYS = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]  # بر اساس weekday() پایتون
+
+
+def g2j(gy, gm, gd):
+    g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+    gy2 = gy + 1 if gm > 2 else gy
+    days = 355666 + 365 * gy + (gy2 + 3) // 4 - (gy2 + 99) // 100 + (gy2 + 399) // 400 + gd + g_d_m[gm - 1]
+    jy = -1595 + 33 * (days // 12053)
+    days %= 12053
+    jy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    if days < 186:
+        jm, jd = 1 + days // 31, 1 + days % 31
+    else:
+        jm, jd = 7 + (days - 186) // 30, 1 + (days - 186) % 30
+    return jy, jm, jd
+
+
+def fa(n):
+    return str(n).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+
+
+def jalali_today():
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3, minutes=30)))
+    jy, jm, jd = g2j(now.year, now.month, now.day)
+    return f"{WEEKDAYS[now.weekday()]} {fa(jd)} {MONTHS[jm-1]} {fa(jy)}"
+
+
 CSS = """
 @page {
-  size: A4; margin: 1.6cm 1.6cm 2cm 1.6cm;
-  @bottom-center { content: "RoboRam  •  " counter(page); font-size: 10px; color: #8b8fb5; }
+  size: A4; margin: 1.3cm 1.6cm 1.6cm 1.6cm;
+  @bottom-left { content: "RoboRam"; font-size: 9px; color: #94a3b8; letter-spacing: 2px; }
+  @bottom-right { content: counter(page); font-size: 9px; color: #94a3b8; }
 }
 body { font-family: 'Vazirmatn','Noto Naskh Arabic','Noto Sans Arabic','DejaVu Sans',sans-serif;
-       font-size: 13px; line-height: 1.9; color: #1f2347; }
-.hero { background: linear-gradient(135deg, #4f46e5, #9333ea); color: #fff; border-radius: 18px;
-        padding: 22px 26px; margin-bottom: 22px; }
-.hero .brand { font-size: 12px; letter-spacing: 4px; opacity: .85; direction: ltr; text-align: left; }
-.hero h1 { margin: 4px 0 8px 0; font-size: 28px; }
-.hero .meta span { display: inline-block; background: rgba(255,255,255,.22); border-radius: 20px;
-                   padding: 2px 14px; margin-left: 8px; font-size: 12px; }
-.card { background: #f6f7ff; border: 1px solid #dfe2ff; border-right: 6px solid #6366f1;
-        border-radius: 14px; padding: 12px 16px; margin: 0 0 14px 0; page-break-inside: avoid; }
-.num { display: inline-block; background: #4f46e5; color: #fff; border-radius: 50%;
-       width: 26px; height: 26px; line-height: 26px; text-align: center; font-weight: bold;
-       font-size: 12px; margin-left: 8px; }
-.stem { font-weight: bold; margin-bottom: 6px; }
-.opt { margin: 3px 0; padding: 3px 10px; background: #fff; border: 1px solid #e3e5fb; border-radius: 10px; }
-.lbl { display: inline-block; min-width: 20px; text-align: center; color: #fff; background: #9333ea;
-       border-radius: 8px; font-size: 11px; padding: 0 5px; margin-left: 8px; }
-.ans-title { background: linear-gradient(135deg, #059669, #10b981); color: #fff; border-radius: 18px;
-             padding: 14px 26px; font-size: 22px; font-weight: bold; margin-bottom: 18px; }
-.acard { background: #f0fdf6; border: 1px solid #c7f0da; border-right: 6px solid #10b981;
-         border-radius: 14px; padding: 10px 16px; margin: 0 0 12px 0; page-break-inside: avoid; }
-.acard .num { background: #059669; }
-.ahead { display: inline-block; background: #10b981; color: #fff; border-radius: 10px; padding: 0 12px; font-weight: bold; }
-.reason { margin-top: 4px; color: #2b3a33; }
-.wm { position: fixed; top: 40%; left: 0; width: 100%; text-align: center; direction: ltr;
-      font-family: 'DejaVu Sans', sans-serif; font-weight: bold; font-size: 115px; letter-spacing: 10px;
-      color: rgba(79, 70, 229, 0.08); transform: rotate(-32deg); }
+       font-size: 12px; line-height: 1.75; color: #0f172a; margin: 0; }
+table { border-collapse: collapse; width: 100%; }
+td { vertical-align: top; padding: 0; }
+.head td { vertical-align: middle; }
+.title { font-size: 21px; font-weight: bold; }
+.sub { color: #64748b; font-size: 11.5px; }
+.logo { height: 58px; }
+.bar { height: 3px; background: #0f172a; margin: 8px 0 10px 0; }
+.info { margin-bottom: 14px; }
+.info td { padding: 5px 0; font-size: 11.5px; }
+.line { border-bottom: 1px dashed #94a3b8; }
+.lab { color: #475569; white-space: nowrap; padding-left: 6px; }
+.chip { background: #0f172a; color: #fff; padding: 1px 12px; border-radius: 3px; font-weight: bold; }
+.q { margin: 0 0 11px 0; page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+.q .n { width: 24px; font-weight: bold; color: #0f172a; font-size: 13px; }
+.stem { font-weight: bold; margin-bottom: 3px; }
+.opts td { width: 50%; padding: 1px 0; }
+.lbl { display: inline-block; width: 15px; height: 15px; line-height: 15px; text-align: center; border: 1px solid #0f172a;
+       border-radius: 50%; font-size: 9px; margin-left: 5px; }
+.atitle { font-size: 17px; font-weight: bold; border-right: 5px solid #0f172a; padding-right: 10px; margin-bottom: 12px; }
+.a { margin-bottom: 8px; page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+.a .n { width: 24px; font-weight: bold; }
+.ahead { font-weight: bold; background: #0f172a; color: #fff; padding: 0 9px; border-radius: 3px; }
+.reason { color: #334155; margin-top: 3px; }
+.wm { position: fixed; top: 27%; left: 14%; width: 72%; opacity: 0.07; }
+.wm img { width: 100%; }
 """
 
 
 def build_pdf(items, path, start=0, total=0):
     from weasyprint import HTML
-    today = datetime.date.today().isoformat()
     e = html.escape
-    rng = f"<span>سوال {start+1} تا {start+len(items)} از {total}</span>" if total else ""
-    body = (f"<div class='hero'><div class='brand'>ROBORAM</div>"
-            f"<h1>{e(SUBJECT)}</h1>"
-            f"<div class='meta'><span>{e(GRADE)}</span><span>{today}</span>{rng}</div></div>")
+    day = start // PER_DAY + 1
+    here = os.path.dirname(os.path.abspath(__file__))
+    logo = "<img class='logo' src='logo.png'>" if os.path.exists(os.path.join(here, "logo.png")) else ""
+
+    body = (f"<table class='head'><tr><td><div class='title'>آزمون {e(SUBJECT)}</div>"
+            f"<div class='sub'>{e(GRADE)} &nbsp;|&nbsp; {e(jalali_today())}</div></td>"
+            f"<td style='text-align:left'>{logo}</td></tr></table><div class='bar'></div>"
+            f"<table class='info'><tr>"
+            f"<td class='lab' style='width:1%'>نام و نام‌خانوادگی:</td><td class='line' style='width:55%'>&nbsp;</td>"
+            f"<td style='text-align:left'><span class='chip'>روز {fa(day)}</span></td></tr></table>")
+
     for i, (q, _) in enumerate(items, 1):
         stem, opts = parse_question(q)
-        opts_html = "".join(f"<div class='opt'><span class='lbl'>{e(l)}</span>{e(t)}</div>" for l, t in opts)
-        body += f"<div class='card'><div class='stem'><span class='num'>{i}</span>{fmt(stem)}</div>{opts_html}</div>"
-    body += "<div style='page-break-before:always'></div><div class='ans-title'>✅ پاسخنامه</div>"
+        cells = [f"<td><span class='lbl'>{e(fa(l) if l.isdigit() else l)}</span>{e(t)}</td>" for l, t in opts]
+        rows = ""
+        for k in range(0, len(cells), 2):
+            pair = cells[k:k + 2]
+            if len(pair) == 1:
+                pair.append("<td></td>")
+            rows += "<tr>" + "".join(pair) + "</tr>"
+        otable = f"<table class='opts'>{rows}</table>" if rows else ""
+        body += (f"<div class='q'><table><tr><td class='n'>{fa(i)}.</td>"
+                 f"<td><div class='stem'>{fmt(stem)}</div>{otable}</td></tr></table></div>")
+
+    body += (f"<div style='page-break-before:always'></div><div class='atitle'>پاسخنامه — روز {fa(day)}</div>")
     for i, (_, a) in enumerate(items, 1):
         head, reason = parse_answer(a)
         r = f"<div class='reason'>{fmt(reason)}</div>" if reason else ""
-        body += f"<div class='acard'><span class='num'>{i}</span><span class='ahead'>{e(head)}</span>{r}</div>"
-    body += "<div class='wm'>RoboRam</div>"
-    doc = f"<html dir='rtl'><head><meta charset='utf-8'><style>{CSS}</style></head><body>{body}</body></html>"
-    HTML(string=doc).write_pdf(path)
+        body += (f"<div class='a'><table><tr><td class='n'>{fa(i)}.</td>"
+                 f"<td><span class='ahead'>{e(head)}</span>{r}</td></tr></table></div>")
+
+    wm = "<div class='wm'><img src='logo.png'></div>" if logo else ""
+    doc = f"<html dir='rtl'><head><meta charset='utf-8'><style>{CSS}</style></head><body>{body}{wm}</body></html>"
+    HTML(string=doc, base_url=here + "/").write_pdf(path)
 
 
 def tg(method, **kw):
@@ -166,7 +217,7 @@ def main():
     items = all_q[cur: cur + PER_DAY]
     end = cur + len(items)
 
-    tg("sendMessage", data={"chat_id": CHAT_ID, "text": f"⏰ وقت تست حل کردنه!\nدرس: {SUBJECT}\nسوال‌های {cur+1} تا {end} از {len(all_q)}\nتا چند لحظه دیگه می‌رسن 👇"})
+    tg("sendMessage", data={"chat_id": CHAT_ID, "text": f"⏰ وقت تست حل کردنه!\nدرس: {SUBJECT}\nروز {cur // PER_DAY + 1} (سوال‌های {cur+1} تا {end} از {len(all_q)})\nتا چند لحظه دیگه می‌رسن 👇"})
     pdf_path = f"tests-{datetime.date.today().isoformat()}.pdf"
     build_pdf(items, pdf_path, cur, len(all_q))
     with open(pdf_path, "rb") as f:
