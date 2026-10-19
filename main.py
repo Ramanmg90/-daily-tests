@@ -31,26 +31,34 @@ def pick_topic():
 
 
 def ask_model(prompt):
+    import time
     last_err = None
     for model in MODELS:
-        try:
-            r = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization": f"Bearer {OPENROUTER_KEY}"},
-                json={"model": model.strip(), "messages": [{"role": "user", "content": prompt}], "temperature": 0.7},
-                timeout=180,
-            )
-            r.raise_for_status()
-            text = r.json()["choices"][0]["message"]["content"]
-            text = re.sub(r"```(?:json)?", "", text)
-            start, end = text.find("["), text.rfind("]")
-            data = json.loads(text[start:end + 1])
-            if len(data) >= N_QUESTIONS:
-                print("مدل موفق:", model)
-                return data[:N_QUESTIONS]
-        except Exception as e:
-            last_err = e
-            print("خطا با", model, "->", e)
+        for attempt in range(2):
+            try:
+                r = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {OPENROUTER_KEY}"},
+                    json={"model": model.strip(), "messages": [{"role": "user", "content": prompt}], "max_tokens": 6000},
+                    timeout=180,
+                )
+                if r.status_code != 200:
+                    print(f"خطا با {model} (تلاش {attempt+1}): {r.status_code} {r.text[:400]}")
+                    last_err = f"{r.status_code} {r.text[:200]}"
+                    time.sleep(5)
+                    continue
+                text = r.json()["choices"][0]["message"]["content"] or ""
+                text = re.sub(r"```(?:json)?", "", text)
+                start, end = text.find("["), text.rfind("]")
+                data = json.loads(text[start:end + 1])
+                if len(data) >= N_QUESTIONS:
+                    print("مدل موفق:", model)
+                    return data[:N_QUESTIONS]
+                print(f"{model}: تعداد سوال کم بود ({len(data)})")
+            except Exception as e:
+                last_err = e
+                print(f"خطا با {model} (تلاش {attempt+1}): {e}")
+                time.sleep(5)
     raise RuntimeError(f"هیچ مدلی جواب نداد: {last_err}")
 
 
