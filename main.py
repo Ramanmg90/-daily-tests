@@ -62,13 +62,28 @@ def ask_model(prompt):
     raise RuntimeError(f"هیچ مدلی جواب نداد: {last_err}")
 
 
+def load_samples():
+    try:
+        return open("samples.txt", encoding="utf-8").read().strip()[:6000]
+    except Exception:
+        return ""
+
+
 def generate_questions(topic, history):
     avoid = "\n".join(history[-60:]) or "ندارد"
+    samples = load_samples()
+    sample_part = ""
+    if samples:
+        sample_part = f"""
+این چند نمونه سوال واقعی هستند. سطح سختی، سبک طراحی گزینه‌ها و تیپ سوال‌ها باید دقیقاً شبیه این نمونه‌ها باشد. سوال‌ها را کپی نکن و سوال‌های جدید بساز:
+{samples}
+"""
     prompt = f"""تو یک معلم باتجربه هستی. {N_QUESTIONS} تست چهارگزینه‌ای برای درس «{SUBJECT}» {GRADE} بنویس.
 مبحث: {topic}
 زبان تست‌ها: {LANGUAGE}
+{sample_part}
 قوانین:
-- سطح سوال‌ها ترکیبی از آسان، متوسط و سخت باشد.
+- سطح سوال‌ها متوسط و هم‌سطح نمونه‌ها باشد، نه خیلی ساده و نه خیلی سخت.
 - فقط یک گزینه درست باشد و پاسخ‌ها را دوباره چک کن که حتماً درست باشند.
 - فرمول‌ها را با متن ساده بنویس (بدون LaTeX).
 - از این سوال‌های قبلی تکرار نکن:
