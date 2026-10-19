@@ -7,7 +7,7 @@ LANGUAGE  = (os.getenv("LANGUAGE") or "فارسی")          # زبان تست�
 TOPICS    = [t.strip() for t in os.getenv("TOPICS", "").split(",") if t.strip()]  # اختیاری: مباحث، جدا شده با کاما
 N_QUESTIONS = 10
 # مدل‌های رایگان OpenRouter (اگه یکی کار نکرد، بعدی امتحان می‌شه)
-MODELS = os.getenv("MODELS", "meta-llama/llama-3.3-70b-instruct:free,google/gemma-3-27b-it:free,deepseek/deepseek-chat-v3-0324:free").split(",")
+MODELS = (os.getenv("MODELS") or "openrouter/free,meta-llama/llama-3.3-70b-instruct:free,openai/gpt-oss-20b:free,qwen/qwen3-coder-480b-a35b-instruct:free").split(",")
 # ===================================================================
 
 import local_secrets as _s
